@@ -2,13 +2,22 @@
   "name": "jwt-vulnerable-app",
   "type": "module",
   "version": "1.0.0",
+  "description": "Application vulnérable avec register/login",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "dev": "node --watch server.js"
   },
   "dependencies": {
-    "axios": "^1.13.2",
+    "bcryptjs": "^2.4.3",
     "express": "^4.21.2",
     "jsonwebtoken": "^9.0.2"
-  }
+  },
+  "keywords": [
+    "jwt",
+    "security",
+    "vulnerable"
+  ],
+  "author": "Votre Nom",
+  "license": "MIT"
 }

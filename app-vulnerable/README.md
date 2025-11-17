@@ -1,111 +1,141 @@
-# 🚨 Vulnerable JWT Application
+# 🚨 JWT Vulnerable API
 
-This application is **intentionally vulnerable** to allow testing and exploitation of common security weaknesses in JSON Web Tokens (JWT). It includes multiple flawed implementations for educational purposes.
+Cette application ExpressJS est un **serveur volontairement vulnérable aux attaques JWT**. Elle permet de tester et comprendre les failles de sécurité classiques liées à l'utilisation incorrecte des JSON Web Tokens.
 
----
-
-## 📋 Steps to Test
+> ⚠️ **Attention : Ce projet est uniquement destiné à des fins d’apprentissage. Ne jamais déployer ce code en production.**
 
 ---
 
-### Step 1: Install Dependencies
+## 🧩 Fonctionnalités
+
+- Inscription d'utilisateur sans validation
+- Login avec token JWT sans expiration
+- Profil accessible sans vérification de signature
+- Accès admin via simple injection de rôle dans le token
+- Support de l'algorithme `none`
+- Scanner automatisé des tokens JWT
+
+---
+
+## 🚨 Vulnérabilités incluses
+
+| N°  | Endpoint      | Description de la vulnérabilité                    | Risque                                       |
+|-----|---------------|----------------------------------------------------|----------------------------------------------|
+| 1   | `/register`   | Pas de validation de données, hash faible          | Injection, mots de passe faibles             |
+| 2   | `/login`      | JWT sans expiration, données sensibles dans le payload | Token volé valable indéfiniment              |
+| 3   | `/profile`    | `jwt.decode()` sans vérification de signature      | Jeton non signé accepté                      |
+| 4   | `/admin`      | Rôle déclaré dans le JWT non vérifié               | Escalade de privilèges                       |
+| 5   | `/verify`     | Accepte les tokens `alg: none`                     | Bypass complet d’authentification            |
+| 6   | `/scan-token` | Scanner révèle les failles mais ne les empêche pas | Diagnostic mais pas de protection            |
+
+---
+
+## 🚀 Installation et Exécution
+
+### Pré-requis
+- **Node.js** (version 14 ou supérieure)
+- **npm**
+
+### Installation
+Clonez le dépôt et installez les dépendances :
 
 ```bash
-cd app-vulnerable
+git clone <repo-url>
+cd ProjectJWT
 npm install
-Step 2: Start the Application
+Démarrage
 bash
 Copier le code
 npm start
-🟢 Expected startup message:
+Le serveur démarre sur :
+📍 http://localhost:3001
 
-arduino
+🔧 Endpoints disponibles
+Route	Méthode	Description
+/	GET	Page de bienvenue
+/register	POST	Inscription utilisateur
+/login	POST	Connexion + génération du JWT vulnérable
+/profile	GET	Profil utilisateur à partir du token
+/admin	GET	Ressource admin vulnérable
+/verify	POST	Vérifie un token avec alg HS256 ou none
+/scan-token	POST	Analyse un JWT et détecte les failles
+/health	GET	Status et statistiques
+
+📬 Tester les vulnérabilités avec Postman
+Ouvre Postman et crée une nouvelle collection appelée "JWT Vulnerable API".
+
+Ajoute les requêtes suivantes :
+
+1. Register (vulnérable)
+http
 Copier le code
-🚨 VULNERABLE APPLICATION STARTED
-📍 URL: http://localhost:3000
-🧪 Step 3: Test with Postman
-🔑 Test 1: Log In
-METHOD: POST
+POST /register
+Content-Type: application/json
 
-URL: http://localhost:3000/login
-
-Body (raw JSON):
-
-json
-Copier le code
 {
-  "username": "alice",
-  "password": "pass123"
+    "username": "admin",
+    "password": "password123",
+    "email": "admin@test.com"
 }
-Objective: Obtain a JWT token.
+2. Login (JWT sans exp, données sensibles)
 
-👤 Test 2: View Profile
-METHOD: GET
+POST /login
+Content-Type: application/json
 
-URL: http://localhost:3000/profile
-
-Headers:
-
-makefile
-Copier le code
-Authorization: Bearer [PASTE_YOUR_TOKEN_HERE]
-Objective: View profile data (with sensitive information exposed).
-
-👮‍♂️ Test 3: Attempt Admin Access
-METHOD: GET
-
-URL: http://localhost:3000/admin
-
-Headers:
-
-makefile
-Copier le code
-Authorization: Bearer [PASTE_YOUR_TOKEN_HERE]
-❌ Expected Result: Access denied (normal for non-admin users).
-
-🏴‍☠️ Step 4: Run the Automated Exploit
-bash
-Copier le code
-cd ../exploits
-npm install
-node pirate.js
-🎯 Expected Exploit Results:
-
-Admin access via alg:none token
-
-Secret key "secret123" discovered
-
-Sensitive data extracted
-
-🔍 Step 5: Manually Verify Vulnerabilities
-Test: Accepting "none" Algorithm Token
-METHOD: POST
-
-URL: http://localhost:3000/verify
-
-Body:
-
-json
-Copier le code
 {
-  "token": "eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJ1c2VySWQiOjk5OSwidXNlcm5hbWUiOiJoYWNrZXIiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NjMzMjM3NDl9."
+    "username": "admin",
+    "password": "password123"
 }
-🎯 Expected Result: The "none" algorithm token is accepted!
+Récupère le token retourné.
 
-👤 Test Accounts
-Role	Username	Password
-Normal User	alice	pass123
-Administrator	admin	admin123
+3. Profile (decode sans signature)
 
-⚠️ Vulnerabilities to Observe
-alg:none accepted → Signature bypass possible
+GET /profile
+Authorization: Bearer <TOKEN>
+4. Admin (bypass via rôle)
+Modifie le payload du token et change role → "admin", puis envoie :
 
-Weak secret (secret123) → Easily brute-forced
 
-Missing signature verification (decode used) → Accepts tampered tokens
+GET /admin
+Authorization: Bearer <TOKEN_MODIF>
+5. Verify (alg: none)
+Génère un token alg: none sur https://jwt.io puis :
 
-No token expiration → Tokens valid indefinitely
+POST /verify
+Content-Type: application/json
 
-Sensitive data in JWT → Exposes user passwords
+{
+    "token": "<NONE_ALG_TOKEN>"
+}
+6. Scanner
 
-⚠️ This app is built for learning and testing. Do not deploy it in production or expose it to the public internet.
+POST /scan-token
+Content-Type: application/json
+
+{
+    "token": "<ANY_JWT>"
+}
+🛡️ Pour aller plus loin
+Développer une version sécurisée de ce projet
+
+Ajouter jwt.verify avec secret + exp
+
+Mettre en place des middlewares de validation
+
+Stocker les tokens invalidés (blacklist)
+
+Interdire alg: none
+
+📚 Ressources utiles
+https://jwt.io/
+
+https://cheatsheetseries.owasp.org/cheatsheets/JSON_Web_Token_Cheat_Sheet.html
+
+https://portswigger.net/web-security/jwt
+
+
+💡 Ce projet peut servir d'environnement de test pour automatiser des scans avec des outils comme Postman et ZAP.
+
+
+
+
